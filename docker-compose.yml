@@ -1,0 +1,19 @@
+version: '3.8'
+
+    
+services:
+  duckdb:
+    build: ./duckdb
+    container_name: duckdb_container
+    ports:
+      - "8000:8000"  #expose ports
+    
+
+  flask_app:
+    build: ./  
+    container_name: flask_app_container
+    ports:
+      - "5000:5000"
+    depends_on:
+      - duckdb 
+

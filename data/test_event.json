@@ -1,0 +1,45 @@
+[{
+    "id": 11,
+    "event_date": "2024-03-17T18:45:37.889Z",
+    "attribute1": 198772,
+    "attribute2": 198772,
+    "attribute3": 198772,
+    "attribute4": "some string",
+    "attribute5": "12345",
+    "attribute6": true,
+    "metric1": 198772,
+    "metric2": 1.2
+},
+{
+    "id": 9,
+    "attribute1": 9,
+    "attribute4": "some string",
+    "event_date": "2023-01-01T09:00:00",
+    "metric1": 100,
+    "metric2": 150.5
+},
+{
+    "id": 8,
+    "attribute1": 8,
+    "attribute4": "some string8",
+    "event_date": "2023-01-01T08:00:00",
+    "metric1": 120,
+    "metric2": 160.2
+},
+{
+    "id": 7,
+    "attribute1": 8,
+    "attribute4": "some string7",
+    "event_date": "2023-01-01T07:00:00",
+    "metric1": 5,
+    "metric2": 5.5
+},
+{
+    "id": 88,
+    "attribute1": 8,
+    "attribute4": "some string8",
+    "event_date": "2023-01-01T08:00:00",
+    "metric1": 120,
+    "metric2": 88
+}
+]
