@@ -10,7 +10,7 @@ COPY app.py db.py  .
 COPY data/ ./data/
 
 EXPOSE 5000
-ENV FLASK_APP=app.py
+# ENV FLASK_APP=app.py
 
 
 CMD ["python3", "app.py"]

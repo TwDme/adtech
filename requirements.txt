@@ -1,2 +1,6 @@
-flask
+fastapi[all]
 duckdb
+duckdb-engine
+# pydantic
+# sqlaclhemy
+sqlmodel
