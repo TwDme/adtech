@@ -1,6 +1,7 @@
 fastapi[all]
 duckdb
 duckdb-engine
-# pydantic
+pydantic
 # sqlaclhemy
-sqlmodel
+pydantic-settings
+# sqlmodel
