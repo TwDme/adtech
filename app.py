@@ -9,22 +9,17 @@ import os
 import duckdb
 from decimal import *
 from datetime import datetime
-# from models import Event#, AnalyticsResponse, AnalyticsRequest
-# from db import  connect_duckdb, init_table
 from  logging import getLogger
-# from sqlalchemy import Column, Integer, Sequence, String, create_engine
+import json
 import crud, schemas, models
-from db import get_db, engine
-# from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session
-from sqlalchemy import text, func
-# # from pydantic_settings import BaseSettings
-# from sqlalchemy.orm import sessionmaker
+from db import get_db, engine#, metadata_obj
 
+from sqlalchemy.orm import Session
+from sqlalchemy import text, func, insert, inspect
 
 
 logger = getLogger(__name__)
-models.Base.metadata.create_all(bind=engine)
+
 
 
 app = FastAPI()
@@ -46,17 +41,30 @@ def validation_exception_handler(request: Request, exc: ResponseValidationError)
     )
 
 @app.exception_handler(ValidationError)
-async def validation_error_exception_handler(request: Request, exc: ValidationError):
+def validation_error_exception_handler(request: Request, exc: ValidationError):
     error_message = str(exc)  # Convert ValidationError to string
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={"detail": error_message, "error": "Validation error"},
     )
 
-# @app.on_event("startup")
-# def startup(): #con: Session = Depends(get_db)
-    # create db tables
-    # init_table()
+
+
+@app.on_event("startup")
+def startup():
+    #  if there is no table
+    insp = inspect(engine)
+    if not insp.has_table("events"):
+        # init table and dummy data 
+        models.Base.metadata.create_all(engine)
+        
+        dummy_data = open("./data/test_event.json") 
+        rows = json.load(dummy_data)
+        for row in rows:
+            stmt = insert(models.Event).values(**row)
+            with engine.begin() as connection:
+                cursor = connection.execute(stmt)
+
 
 @app.get("/")
 def main_page():
@@ -65,8 +73,9 @@ def main_page():
 
 @app.post("/event")
 def create_event(new_event: schemas.Event, db: Session = Depends(get_db)):
+    
     event = models.Event(**new_event.dict())
-    # db.add(new_event)
+
     query = text('''
         INSERT OR IGNORE INTO events (id, event_date, attribute1, attribute2, attribute3, attribute4, attribute5, attribute6, metric1, metric2)
         VALUES (:id, :event_date, :attribute1, :attribute2, :attribute3, :attribute4, :attribute5, :attribute6, :metric1, :metric2)
@@ -80,10 +89,12 @@ def create_event(new_event: schemas.Event, db: Session = Depends(get_db)):
 
 
 
-@app.get("/analytics/query", response_model = List[schemas.AnalyticsResponse]) # , 
+@app.get("/analytics/query", response_model = List[schemas.AnalyticsResponse])
 def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Session = Depends(get_db)):
 
-    metrics = request.metrics.split(',')
+    # remove whitespaces
+    metrics = [r.strip() for r in request.metrics.split(',')]
+    
     granularity = request.granularity
     group_by = request.groupBy
     filters = request.filters
@@ -93,14 +104,15 @@ def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Sessi
     query = db.query(getattr(models.Event, group_by))
     
     if granularity == 'hourly':
-        query = query.add_columns(text(f"DATE_TRUNC(\'hour\', events.event_date)"))
+        query = query.add_columns(text(f"DATE_TRUNC('hour', event_date)"))
     elif granularity == 'daily':
-        query = query.add_columns(text(f"DATE_TRUNC(\'day\', events.event_date)"))
+        query = query.add_columns(text(f"DATE_TRUNC('day', event_date)"))
     if 'metric1' in metrics:
         query = query.add_columns(func.sum(models.Event.metric1).label('sum_metric1'))
     if 'metric2' in metrics:
         query = query.add_columns(func.sum(models.Event.metric2).label('sum_metric2'))
     
+    print(filters)
     # TODO check conditions
     if filters:
         filter_conditions = filters.split(';')
@@ -112,16 +124,15 @@ def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Sessi
     if end_date:
         query = query.filter(models.Event.event_date <= end_date)
 
-    query = query.group_by(getattr(models.Event, group_by))
     if granularity == 'hourly':
-        query = query.group_by(getattr(models.Event, group_by), text(f"DATE_TRUNC(\'hour\', events.event_date)"))
+        query = query.group_by(getattr(models.Event, group_by), text(f"DATE_TRUNC('hour', event_date)"))
     elif granularity == 'daily':
-        query = query.group_by(getattr(models.Event, group_by), text(f"DATE_TRUNC(\'day\', events.event_date)"))
+        query = query.group_by(getattr(models.Event, group_by), text(f"DATE_TRUNC('day', event_date)"))
 
     try:
         result = query.all()
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Error executing query")
+        raise HTTPException(status_code=500, detail="Error executing query", error = e)
 
     # Prepare and return JSON response
     analytics_data = []
@@ -134,7 +145,7 @@ def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Sessi
             row_data['metric1'] = int(row[2])
         if 'metric2' in metrics:
             row_data['metric2'] = Decimal(round(row[3],2))
-        analytics_data.append(schemas.AnalyticsResponse(**row_data))
+        analytics_data.append(schemas.AnalyticsResponse(**row_data)) #schemas.AnalyticsResponse(**row_data)
     # 
     return analytics_data
 

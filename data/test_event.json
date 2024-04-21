@@ -1,10 +1,11 @@
-[{
+[
+    {
     "id": 11,
     "event_date": "2024-03-17T18:45:37.889Z",
     "attribute1": 198772,
     "attribute2": 198772,
     "attribute3": 198772,
-    "attribute4": "some string",
+    "attribute4": "some string1",
     "attribute5": "12345",
     "attribute6": true,
     "metric1": 198772,

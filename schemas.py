@@ -1,8 +1,9 @@
 from pydantic import BaseModel, validator
-from typing import List, Optional, Union
+from typing import List, Optional
 from decimal import *
+
 class EventBase(BaseModel):  
-    # TODO uuid, autoinc?
+
     id: int
     event_date: str
     metric1: int
@@ -20,7 +21,7 @@ class EventCreate(EventBase):
 class Event(EventBase):
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class AnalyticsRequest(BaseModel):
@@ -50,7 +51,7 @@ class AnalyticsRequest(BaseModel):
         return value
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class AnalyticsResponse(BaseModel):
     groupBy: int
@@ -59,4 +60,4 @@ class AnalyticsResponse(BaseModel):
     metric2: Optional[Decimal] = None 
 
     class Config:
-        orm_mode = True
+        from_attributes = True
