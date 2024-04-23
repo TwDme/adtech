@@ -1,6 +1,8 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from decimal import *
+# from fastapi_filter import FilterDepends, with_prefix
+# from fastapi_filter.contrib.sqlalchemy import Filter
 
 class EventBase(BaseModel):  
 
@@ -28,23 +30,25 @@ class AnalyticsRequest(BaseModel):
     metrics: str
     granularity: str
     groupBy: str
-    filters: Optional[List[str]] = None 
+    filters: Optional[str] = None 
     startDate: Optional[str] = None 
     endDate: Optional[str] = None 
 
-    @validator('metrics')
+    @field_validator('metrics')
     def validate_metrics(cls, value):
         if not value:
             raise ValueError("Metrics field cannot be empty")
+        elif 'metric1' not in value and 'metric2' not in value:
+            raise ValueError("Metrics should have at least 1 of these values: 'metric1' or 'metric2")
         return value
 
-    @validator('granularity')
+    @field_validator('granularity')
     def validate_granularity(cls, value):
         if value not in ['hourly', 'daily']:
             raise ValueError("Granularity must be either 'hourly' or 'daily'")
         return value
 
-    @validator('groupBy')
+    @field_validator('groupBy')
     def validate_groupBy(cls, value):
         if not value:
             raise ValueError("groupBy field cannot be empty")

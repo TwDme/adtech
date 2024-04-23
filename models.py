@@ -3,8 +3,6 @@ from sqlalchemy.types import DECIMAL
 from db import Base
 
 
-
-
 # alchemy
 class Event(Base):
     __tablename__ = 'events'

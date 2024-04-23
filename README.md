@@ -1,7 +1,5 @@
 
-python3 -m venv ./venv
 
-source venv/bin/activate
 
 pip3 install -r requirements.txt
 
@@ -21,11 +19,9 @@ for example http://127.0.0.1:5000/analytics/query?metrics=metric1,metric2&groupB
  Select * From Events where id >= 101 Order By id ASC LIMIT 100
 
  or
- TODO Graphql
+ TODO Graphql?, SSL, auth
 
- TOOO fastAPI, SSL
-
- TODO
+ TODO docker
 
 - почти полностью отсутствует валидация данных (можно было применить такие библиотеки, как pydantic)
 

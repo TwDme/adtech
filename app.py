@@ -1,10 +1,10 @@
 from fastapi import FastAPI, HTTPException, Query, Request, status, Depends
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError, BaseModel
+from pydantic import ValidationError
 
 
-from typing import List,Optional
+from typing import List
 import os
 import duckdb
 from decimal import *
@@ -12,13 +12,20 @@ from datetime import datetime
 from  logging import getLogger
 import json
 import crud, schemas, models
-from db import get_db, engine#, metadata_obj
+from db import get_db, engine
 
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func, insert, inspect
-
+from fastapi_sa_orm_filter.main import FilterCore
+from fastapi_sa_orm_filter.operators import Operators as ops
 
 logger = getLogger(__name__)
+
+# Filter operations
+event_filter = {
+    'attribute1': [ops.eq, ops.in_, ops.not_eq],
+    'attribute2': [ops.not_eq, ops.gte, ops.lte, ops.in_, ops.eq]
+}
 
 
 
@@ -90,13 +97,17 @@ def create_event(new_event: schemas.Event, db: Session = Depends(get_db)):
 
 
 @app.get("/analytics/query", response_model = List[schemas.AnalyticsResponse])
-def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Session = Depends(get_db)):
-
+def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Session = Depends(get_db)): 
+    """
+    Gets aggregated results from DB
+    query example: 
+    /analytics/query?metrics=metric1,metric2&groupBy=attribute1&granularity=daily&filters=attribute1__in_=200,300|attribute2__gte=100&endDate=2023-02-01&startDate=2022-12-12
+    """
     # remove whitespaces
     metrics = [r.strip() for r in request.metrics.split(',')]
     
-    granularity = request.granularity
-    group_by = request.groupBy
+    granularity = request.granularity.strip()
+    group_by = request.groupBy.strip()
     filters = request.filters
     start_date = request.startDate
     end_date = request.endDate
@@ -112,13 +123,14 @@ def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Sessi
     if 'metric2' in metrics:
         query = query.add_columns(func.sum(models.Event.metric2).label('sum_metric2'))
     
-    print(filters)
-    # TODO check conditions
+    # print(filters)
     if filters:
-        filter_conditions = filters.split(';')
-        for filter_condition in filter_conditions:
-            filter_key, filter_value = filter_condition.split('=')
-            query = query.filter(getattr(models.Event, filter_key) == filter_value)
+        filter_inst = FilterCore(models.Event, event_filter)
+
+        # print(filter_inst._get_filter_query(filters))
+        filter_query_part = filter_inst.get_filter_query_part(filters)
+        query = query.filter(*filter_query_part)
+
     if start_date:
         query = query.filter(models.Event.event_date >= start_date)
     if end_date:
@@ -130,6 +142,7 @@ def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Sessi
         query = query.group_by(getattr(models.Event, group_by), text(f"DATE_TRUNC('day', event_date)"))
 
     try:
+        
         result = query.all()
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error executing query", error = e)
@@ -145,7 +158,7 @@ def get_analytics_data( request: schemas.AnalyticsRequest = Depends(), db: Sessi
             row_data['metric1'] = int(row[2])
         if 'metric2' in metrics:
             row_data['metric2'] = Decimal(round(row[3],2))
-        analytics_data.append(schemas.AnalyticsResponse(**row_data)) #schemas.AnalyticsResponse(**row_data)
+        analytics_data.append(schemas.AnalyticsResponse(**row_data))
     # 
     return analytics_data
 
