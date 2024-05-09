@@ -1,6 +1,7 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from decimal import *
+from datetime import datetime
 # from fastapi_filter import FilterDepends, with_prefix
 # from fastapi_filter.contrib.sqlalchemy import Filter
 
@@ -22,7 +23,7 @@ class EventCreate(EventBase):
 
 class Event(EventBase):
     
-    class Config:
+    class ConfigDict:
         from_attributes = True
 
 
@@ -31,8 +32,8 @@ class AnalyticsRequest(BaseModel):
     granularity: str
     groupBy: str
     filters: Optional[str] = None 
-    startDate: Optional[str] = None 
-    endDate: Optional[str] = None 
+    startDate: Optional[datetime] = None 
+    endDate: Optional[datetime] = None 
 
     @field_validator('metrics')
     def validate_metrics(cls, value):
@@ -54,7 +55,7 @@ class AnalyticsRequest(BaseModel):
             raise ValueError("groupBy field cannot be empty")
         return value
     
-    class Config:
+    class ConfigDict:
         from_attributes = True
 
 class AnalyticsResponse(BaseModel):
@@ -63,5 +64,5 @@ class AnalyticsResponse(BaseModel):
     metric1: Optional[int] = None 
     metric2: Optional[Decimal] = None 
 
-    class Config:
+    class ConfigDict:
         from_attributes = True
