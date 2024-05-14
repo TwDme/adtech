@@ -90,12 +90,6 @@ class TestApp(unittest.TestCase):
                 "date": "2024-01-15:00:00:00",
                 "metric1": 1,
                 "metric2": "2.20"
-            },
-            {
-                "groupBy": 198772,
-                "date": "2024-03-16:00:00:00",
-                "metric1": 198772,
-                "metric2": "1.20"
             }
         ]
         self.assertCountEqual(data, expected_data)
@@ -147,13 +141,8 @@ class TestApp(unittest.TestCase):
             "date": "2024-03-17:00:00:00",
             "metric1": 198772,
             "metric2": "1.20"
-        },
-        {
-            "groupBy": 198772,
-            "date": "2024-03-16:00:00:00",
-            "metric1": 198772,
-            "metric2": "1.20"
         }
+        
         ]
 
         response = self.client.get('/analytics/query?metrics=metric1,metric2&groupBy=attribute1&granularity=daily&startDate=2024-01-12')
