@@ -12,7 +12,7 @@ from decimal import *
 from datetime import datetime
 from  logging import getLogger
 import json
-import crud, schemas, models
+import schemas, models
 from db import get_db, engine
 
 from sqlalchemy.orm import Session
@@ -171,7 +171,3 @@ def get_analytics_data( analytics_request: schemas.AnalyticsRequest = Depends(),
     # 
     return analytics_data
 
-# if __name__ == '__main__':
-
-    # app.run(host=os.environ.get("BACKEND_HOST", "127.0.0.1"), port=5000,debug=True)
-    # app.run(host='0.0.0.0')
